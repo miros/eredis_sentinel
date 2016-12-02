@@ -16,7 +16,7 @@
 -type db_num() :: non_neg_integer().
 
 -type redis_conn() :: term().
--type error() :: all_sentinels_down | master_unknown | not_a_master | {master_not_available, redis_addr()} | term().
+-type error() :: all_sentinels_down | master_unknown | not_a_master | {master_not_available, redis_addr(), term()} | term().
 
 -type options() :: #{sentinel_addrs => [redis_addr()], timeout => timeout(), redis_client => module()}.
 
@@ -129,8 +129,8 @@ check_master(RedisClient, [MasterHost, MasterPort] = MasterAddr, Timeout) ->
       end,
       RedisClient:close(Conn),
       Result;
-    {error, _} ->
-      {error, {master_not_available, MasterAddr}}
+    {error, Error} ->
+      {error, {master_not_available, MasterAddr, Error}}
   end.
 
 is_master(RedisClient, Conn, Timeout) ->
