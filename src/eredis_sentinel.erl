@@ -10,6 +10,8 @@
   get_master/2
 ]).
 
+-define(EREDIS_TIMEOUT, 5000).
+
 -type redis_addr() :: list(). % ["127.0.0.1", 6379]
 
 -type master_name() :: binary() | string() | atom().
@@ -24,15 +26,17 @@
 %% API functions
 %%====================================================================
 
--spec connect_eredis(master_name(), db_num()) -> {ok, redis_conn()} | {error, error()}.
+-spec connect_eredis(master_name(), db_num() | list()) -> {ok, redis_conn()} | {error, error()}.
 
-connect_eredis(MasterName, Db) ->
-  connect_eredis(MasterName, Db, #{}).
+connect_eredis(MasterName, EredisOptions) ->
+  connect_eredis(MasterName, EredisOptions, #{}).
 
--spec connect_eredis(master_name(), db_num(), options()) -> {ok, redis_conn()} | {error, error()}.
+-spec connect_eredis(master_name(), db_num() | list(), options()) -> {ok, redis_conn()} | {error, error()}.
 
-connect_eredis(MasterName, Db, Options) ->
-  connect(MasterName, Db, Options, {eredis, start_link}).
+connect_eredis(MasterName, Db, Options) when is_integer(Db) ->
+  connect_eredis(MasterName, [Db], Options);
+connect_eredis(MasterName, EredisOptions, Options) ->
+  connect(MasterName, build_eredis_options(EredisOptions), Options, {eredis, start_link}).
 
 -spec connect_eredis_sync(master_name(), db_num()) -> {ok, redis_conn()} | {error, error()}.
 
@@ -42,7 +46,7 @@ connect_eredis_sync(MasterName, Db) ->
 -spec connect_eredis_sync(master_name(), db_num(), options()) -> {ok, redis_conn()} | {error, error()}.
 
 connect_eredis_sync(MasterName, Db, Options) ->
-  connect(MasterName, Db, Options, {eredis_sync, connect_db}).
+  connect(MasterName, [Db], Options, {eredis_sync, connect_db}).
 
 -spec get_master(master_name()) -> {ok, redis_addr()} | {error, error()}.
 
@@ -70,10 +74,10 @@ extract_sentinel_addrs(Options) ->
       Addrs
   end.
 
-connect(MasterName, Db, Options, {Module, Method}) ->
+connect(MasterName, RedisClientOptions, Options, {Module, Method}) ->
   case get_master(MasterName, Options) of
     {ok, [Host, Port]} ->
-      erlang:apply(Module, Method, [Host, Port, Db]);
+      erlang:apply(Module, Method, [Host, Port | RedisClientOptions]);
     Error ->
       Error
   end.
@@ -157,3 +161,14 @@ get_redis_client() ->
 
 get_timeout() ->
   application:get_env(?MODULE, timeout, 5000).
+
+build_eredis_options([]) ->
+  build_eredis_options([0]);
+build_eredis_options([Db]) ->
+  build_eredis_options([Db, ""]);
+build_eredis_options([Db, Password]) ->
+  build_eredis_options([Db, Password, no_reconnect]);
+build_eredis_options([Db, Password, _ReconnectSleep]) ->
+  build_eredis_options([Db, Password, no_reconnect, ?EREDIS_TIMEOUT]);
+build_eredis_options([Db, Password, _ReconnectSleep, TimeOut]) ->
+  [Db, Password, no_reconnect, TimeOut].
