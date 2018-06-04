@@ -1,0 +1,10 @@
+port 26379
+sentinel myid 0a91bd45d1eb35d5c0000ca220d4e7ac9fe2106c
+
+sentinel monitor mymaster 127.0.0.1 6379 2
+sentinel down-after-milliseconds mymaster 5000
+sentinel failover-timeout mymaster 60000
+
+sentinel monitor test 127.0.0.1 6379 2
+sentinel down-after-milliseconds test 10000
+sentinel failover-timeout test 180000
