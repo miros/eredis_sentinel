@@ -9,10 +9,14 @@ Configuration:
 
 Examples:
 
+    {ok, Conn} = eredis_sentinel:connect_eredis(test, 0),
+
     {ok, Conn} = eredis_sentinel:connect_eredis(test, [0]),
 
     {ok, Conn} = eredis_sentinel:connect_eredis(test, [0, "password", no_reconnect, 10]),
 
     {ok, Conn} = eredis_sentinel:connect_eredis_sync(test, 0),
+
+    {ok, Conn} = eredis_sentinel:connect_eredis_sync(test, [0, 10]),
 
     {ok, [Host, Port]} = eredis_sentinel:get_master(test).

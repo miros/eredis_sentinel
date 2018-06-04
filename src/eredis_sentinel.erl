@@ -38,15 +38,17 @@ connect_eredis(MasterName, Db, Options) when is_integer(Db) ->
 connect_eredis(MasterName, EredisOptions, Options) ->
   connect(MasterName, build_eredis_options(EredisOptions), Options, {eredis, start_link}).
 
--spec connect_eredis_sync(master_name(), db_num()) -> {ok, redis_conn()} | {error, error()}.
+-spec connect_eredis_sync(master_name(), db_num() | list()) -> {ok, redis_conn()} | {error, error()}.
 
-connect_eredis_sync(MasterName, Db) ->
-  connect_eredis_sync(MasterName, Db, #{}).
+connect_eredis_sync(MasterName, EredisSyncOptions) ->
+  connect_eredis_sync(MasterName, EredisSyncOptions, #{}).
 
--spec connect_eredis_sync(master_name(), db_num(), options()) -> {ok, redis_conn()} | {error, error()}.
+-spec connect_eredis_sync(master_name(), db_num() | list(), options()) -> {ok, redis_conn()} | {error, error()}.
 
-connect_eredis_sync(MasterName, Db, Options) ->
-  connect(MasterName, [Db], Options, {eredis_sync, connect_db}).
+connect_eredis_sync(MasterName, Db, Options) when is_integer(Db) ->
+  connect_eredis_sync(MasterName, [Db], Options);
+connect_eredis_sync(MasterName, EredisSyncOptions, Options) ->
+  connect(MasterName, EredisSyncOptions, Options, {eredis_sync, connect_db}).
 
 -spec get_master(master_name()) -> {ok, redis_addr()} | {error, error()}.
 
